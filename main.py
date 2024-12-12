@@ -65,16 +65,17 @@ def run_record_script():
         port = port_entry.get() or 30004
         samples = samples_entry.get() or 0
         frequency = frequency_entry.get() or 125
-        output_file = output_entry.get() or "robot_data.csv" 
-
+        output_file = output_entry.get() or "robot_data.csv"
        
+
         # Determine which config file to use
         config_file = "record_configuration.xml" 
+
         # Collect selected fields from the listbox
         selected_fields = [field_listbox.get(i) for i in field_listbox.curselection()]
 
-        # Create new XML file with selected fields
-        new_config_file = create_new_xml(selected_fields)
+        # Create new XML file with selected fields (pass both selected_fields and config_file)
+        new_config_file = create_new_xml(selected_fields, config_file)  # <-- Fix here
         
         if new_config_file is None:
             return  # If the new config file creation failed, stop further execution
@@ -86,11 +87,10 @@ def run_record_script():
             "--port", str(port), 
             "--samples", str(samples), 
             "--frequency", str(frequency), 
-            "--config", new_config_file,  # Use the new XML file
-            "--output", output_file,
+            "--config", config_file,  # Use the new XML file
+            "--output", output_file
             
         ]
-
 
         # Filter out empty strings from the command list
         command = [arg for arg in command if arg]
@@ -193,6 +193,7 @@ load_fields_button.grid(row=0, column=0, columnspan=3, padx=10, pady=10)
 # Listbox for Fields (multi-selection)
 field_listbox = Listbox(config_frame, selectmode=MULTIPLE, width=40, height=10)
 field_listbox.grid(row=1, column=0, columnspan=3, padx=10, pady=5)
+
 
 # Run Script Button
 button_run = Button(root, text="Run record.py", command=run_record_script)
