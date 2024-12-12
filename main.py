@@ -5,40 +5,55 @@ import shutil
 from tkinter import filedialog
 import xml.etree.ElementTree as ET
 
-# Function to parse the XML file and extract fields for listbox
+# Function to parse the original XML and get field names and types
 def parse_xml_fields(config_file):
+    fields = []
     try:
+        # Parse the original configuration XML
         tree = ET.parse(config_file)
         root = tree.getroot()
-        fields = []
 
-        # Loop through all 'field' elements under the 'recipe' tag
-        for field in root.findall(".//recipe[@key='out']/field"):
-            field_name = field.get("name")
-            fields.append(field_name)
-        return fields
-    except Exception as e:
-        output_text.set(f"Error parsing XML: {e}")
-        return []
+        # Find all 'field' elements under 'recipe'
+        recipe = root.find("recipe")
+        if recipe is not None:
+            for field in recipe.findall("field"):
+                name = field.get("name")
+                type_ = field.get("type")
+                fields.append((name, type_))
+        else:
+            print("Error: 'recipe' element not found in XML.")
     
-# Function to create a new XML with selected fields
-def create_new_xml(selected_fields, output_filename="selected_fields_config.xml"):
+    except Exception as e:
+        print(f"Error parsing XML: {e}")
+    
+    return fields
+
+# Function to create a new XML with selected fields and their types
+def create_new_xml(selected_fields, config_file, output_filename="selected_fields_config.xml"):
     try:
+        # Parse the original configuration XML to get the field types
+        fields_and_types = parse_xml_fields(config_file)
+        
         # Create the root element for the new XML
         root = ET.Element("rtde_config")
         recipe = ET.SubElement(root, "recipe", key="out")
 
-        # Add selected fields to the XML
-        for field in selected_fields:
-            ET.SubElement(recipe, "field", name=field, type="STRING")  # You can set the type based on the field type if needed
-
+        # Add selected fields to the XML with their types
+        for selected_field in selected_fields:
+            # Find the type of the selected field
+            field_type = next((field_type for field_name, field_type in fields_and_types if field_name == selected_field), None)
+            if field_type:
+                ET.SubElement(recipe, "field", name=selected_field, type=field_type)
+            else:
+                print(f"Warning: Field '{selected_field}' not found in the original XML.")
+        
         # Write the tree to a new XML file
         tree = ET.ElementTree(root)
         tree.write(output_filename)
         
         return output_filename
     except Exception as e:
-        output_text.set(f"Error creating XML: {e}")
+        print(f"Error creating XML: {e}")
         return None
 
 
