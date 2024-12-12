@@ -25,11 +25,18 @@ def parse_xml_fields(config_file):
 def run_record_script():
     try:
         # Collect arguments from the input fields
-        host = host_entry.get() or "192.168.56.101"
+        """ host = host_entry.get() or "192.168.56.101"
         port = port_entry.get() or 30004
         samples = samples_entry.get() or 0
         frequency = frequency_entry.get() or 125
-        output_file = output_entry.get() or "robot_data.csv"
+        output_file = output_entry.get() or "robot_data.csv" """
+
+        # without adding the default values
+        host = host_entry.get() 
+        port = port_entry.get() 
+        samples = samples_entry.get() 
+        frequency = frequency_entry.get() 
+        output_file = output_entry.get() 
 
         # Determine which config file to use
         config_file = "record_configuration.xml" 
