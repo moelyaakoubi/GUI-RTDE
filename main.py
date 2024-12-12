@@ -65,7 +65,6 @@ def create_new_xml(selected_fields, config_file, output_filename="selected_field
 
 # Function to run record.py with command-line arguments
 def run_record_script():
-    global process
     try:
         # Collect arguments from the input fields
         host = host_entry.get() or "192.168.56.101"
@@ -73,7 +72,7 @@ def run_record_script():
         samples = samples_entry.get() or 0
         frequency = frequency_entry.get() or 125
         output_file = output_entry.get() or "robot_data.csv"
-    
+       
 
         # Determine which config file to use
         config_file = "record_configuration.xml" 
@@ -81,9 +80,9 @@ def run_record_script():
         # Collect selected fields from the listbox
         selected_fields = [field_listbox.get(i) for i in field_listbox.curselection()]
 
-        # Create new XML file with selected fields
-        new_config_file = create_new_xml(selected_fields, config_file)
-
+        # Create new XML file with selected fields (pass both selected_fields and config_file)
+        new_config_file = create_new_xml(selected_fields, config_file)  # <-- Fix here
+        
         if new_config_file is None:
             return  # If the new config file creation failed, stop further execution
 
@@ -94,36 +93,29 @@ def run_record_script():
             "--port", str(port), 
             "--samples", str(samples), 
             "--frequency", str(frequency), 
-            "--config", config_file, 
+            "--config", config_file,  # Use the new XML file
             "--output", output_file
+            
         ]
 
         # Filter out empty strings from the command list
         command = [arg for arg in command if arg]
 
-        # Run the command in the background and store the process object
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        # Run the command and capture output
+        result = subprocess.run(command, capture_output=True, text=True)
 
-        # Optionally, update the GUI to show that the process has started
-        output_text.set("Process started...")
+        # Display the captured output in a label
+        output_text.set(result.stdout)  # Display standard output
+        error_text.set(result.stderr)   # Display standard error if any
+
+        # Check if the file was created by record.py
+        if os.path.exists(output_file):
+            download_button.config(state=NORMAL)  # Enable the download button if file exists
+        else:
+            download_button.config(state=DISABLED)  # Disable the download button if file doesn't exist
 
     except Exception as e:
-        output_text.set(f"Error: {e}")
-
-# Function to stop the running process
-def stop_record_script():
-    global process
-    if process is not None:
-        try:
-            # Terminate the process
-            process.terminate()  # or process.kill() to forcefully terminate
-            output_text.set("Process terminated.")
-        except Exception as e:
-            output_text.set(f"Error stopping process: {e}")
-        finally:
-            process = None  # Reset the process object after stopping
-    else:
-        output_text.set("No process is running.")
+        output_text.set(f"Error: {e}")  # If there is an error running the script
 
 # Function to download the .csv file
 def download_file():
@@ -155,8 +147,6 @@ def load_fields():
     # Populate the listbox with field names
     for field in fields:
         field_listbox.insert(END, field)
-
-
 
 # Setting up the GUI
 root = Tk()
@@ -214,17 +204,6 @@ field_listbox.grid(row=1, column=0, columnspan=3, padx=10, pady=5)
 # Run Script Button
 button_run = Button(root, text="Run record.py", command=run_record_script)
 button_run.pack(padx=10, pady=10)
-
-# Stop button to stop the running process
-button_stop = Button(root, text="Stop Process", command=stop_record_script, state=DISABLED)
-button_stop.pack(padx=10, pady=10)
-
-# Function to enable the "Stop" button only when the process is running
-def check_process_running():
-    if process is not None and process.poll() is None:  # Check if process is running
-        button_stop.config(state=NORMAL)  # Enable Stop button
-    else:
-        button_stop.config(state=DISABLED)  # Disable Stop button
 
 # Output Display
 output_text = StringVar()
