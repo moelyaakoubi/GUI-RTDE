@@ -20,6 +20,27 @@ def parse_xml_fields(config_file):
     except Exception as e:
         output_text.set(f"Error parsing XML: {e}")
         return []
+    
+# Function to create a new XML with selected fields
+def create_new_xml(selected_fields, output_filename="selected_fields_config.xml"):
+    try:
+        # Create the root element for the new XML
+        root = ET.Element("rtde_config")
+        recipe = ET.SubElement(root, "recipe", key="out")
+
+        # Add selected fields to the XML
+        for field in selected_fields:
+            ET.SubElement(recipe, "field", name=field, type="STRING")  # You can set the type based on the field type if needed
+
+        # Write the tree to a new XML file
+        tree = ET.ElementTree(root)
+        tree.write(output_filename)
+        
+        return output_filename
+    except Exception as e:
+        output_text.set(f"Error creating XML: {e}")
+        return None
+
 
 # Function to run record.py with command-line arguments
 def run_record_script():
@@ -32,11 +53,16 @@ def run_record_script():
         output_file = output_entry.get() or "robot_data.csv" 
 
        
-
         # Determine which config file to use
         config_file = "record_configuration.xml" 
         # Collect selected fields from the listbox
         selected_fields = [field_listbox.get(i) for i in field_listbox.curselection()]
+
+        # Create new XML file with selected fields
+        new_config_file = create_new_xml(selected_fields)
+        
+        if new_config_file is None:
+            return  # If the new config file creation failed, stop further execution
 
         # Build the command with arguments
         command = [
@@ -45,13 +71,11 @@ def run_record_script():
             "--port", str(port), 
             "--samples", str(samples), 
             "--frequency", str(frequency), 
-            "--config", config_file,
-            "--output", output_file
+            "--config", new_config_file,  # Use the new XML file
+            "--output", output_file,
+            
         ]
 
-        # Add selected fields to the command
-        for field in selected_fields:
-            command.append(f"--field {field}")
 
         # Filter out empty strings from the command list
         command = [arg for arg in command if arg]

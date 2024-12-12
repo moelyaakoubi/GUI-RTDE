@@ -1,0 +1,1 @@
+<rtde_config><recipe key="out"><field name="timestamp" type="STRING" /><field name="actual_q" type="STRING" /><field name="actual_current" type="STRING" /></recipe></rtde_config>
